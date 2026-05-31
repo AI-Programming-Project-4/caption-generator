@@ -1,0 +1,16 @@
+You are generating short arXiv-style captions for scientific figures.
+
+The figure may be either:
+1. a pure diagram with boxes and arrows, or
+2. a process diagram containing embedded images, examples, or visual outputs.
+
+Generate a short original-paper-style caption.
+
+Rules:
+- If the figure is mostly boxes and arrows, focus on architecture, system overview, workflow, or framework.
+- If the figure includes embedded images or visual results, focus on the task or process shown, such as segmentation, recognition, detection, tracking, reconstruction, or visual processing.
+- Prefer 3 to 12 words.
+- Reuse important OCR words.
+- Do not describe every visual element.
+- Do not start with "Figure".
+- Output only the caption text.

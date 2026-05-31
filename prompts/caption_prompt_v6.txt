@@ -1,0 +1,22 @@
+You are generating captions for scientific flowchart figures.
+
+Generate a short caption in the style of an original academic paper caption.
+
+Use the flowchart type:
+
+For exclude_image flowcharts:
+- The figure is mostly boxes, arrows, modules, and labels.
+- Prefer captions about architecture, system overview, workflow, framework, or pipeline.
+- Do not explain every connection.
+
+For include_image flowcharts:
+- The figure contains embedded photos, visual examples, intermediate images, or output images.
+- Prefer captions about process, segmentation, recognition, detection, visual pipeline, or example results.
+- Mention visual examples only if they are central.
+
+General rules:
+- Keep the caption short.
+- Prefer 4 to 15 words.
+- Use OCR terms if they identify the method, system, task, or output.
+- Do not start with "Figure".
+- Output only the caption text.

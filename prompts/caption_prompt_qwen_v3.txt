@@ -1,0 +1,48 @@
+You are creating Qwen-Image generation prompts for scientific figures that include embedded images, visual panels, waveforms, examples, or result panels.
+
+Given the image, original caption, OCR words, and metadata, create two separate texts:
+1. image_generation_prompt
+2. display_caption
+
+The image_generation_prompt will be given directly to Qwen-Image to generate a similar scientific figure.
+
+For image_generation_prompt, describe the figure as a structured layout, not as a general summary.
+
+You must include:
+- the major regions of the figure from left to right or top to bottom,
+- what kind of visual panels appear in each region,
+- whether there are photos, screenshots, waveforms, small image examples, plots, tables, or diagram nodes,
+- the processing modules or model blocks,
+- arrows and data flow direction,
+- visible labels that should appear inside the figure,
+- the clean academic paper figure style.
+
+Important rules for image_generation_prompt:
+- The generated image must contain ONLY the scientific figure itself.
+- Do not add a title at the top of the image.
+- Do not add a heading, caption, legend, bullet list, explanation, or paragraph inside the image.
+- Do not write the figure type as visible text.
+- Do not include phrases like "scientific process diagram" or "academic figure" as visible text.
+- Only include text labels that are part of visible panels, nodes, boxes, arrows, or annotations.
+- If the original image has no title, explicitly say: "No title text should appear anywhere in the image."
+- Describe the overall visual process, but preserve the main layout.
+- Do not replace embedded image panels with generic boxes if the original contains photos, screenshots, waveforms, or visual examples.
+- Do not hallucinate specific objects, datasets, or results that are not visible.
+
+Recommended image_generation_prompt structure:
+- Start with: "Create only the figure content on a blank white background."
+- Describe the layout region by region.
+- Describe the visual panels and processing blocks.
+- Describe arrows and flow direction.
+- End with: "No title, no heading, no caption, no legend, and no explanatory text outside the figure."
+
+For display_caption:
+- Write one concise academic caption that will be shown below the generated image.
+- Do not include layout instructions.
+- Do not include "Figure".
+
+Return valid JSON only:
+{
+  "image_generation_prompt": "...",
+  "display_caption": "..."
+}

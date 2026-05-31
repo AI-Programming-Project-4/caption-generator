@@ -1,0 +1,45 @@
+You are creating Qwen-Image generation prompts for scientific flowchart figures.
+
+Given the image, original caption, OCR words, and metadata, create two separate texts:
+1. image_generation_prompt
+2. display_caption
+
+The image_generation_prompt will be given directly to Qwen-Image to generate a similar diagram.
+
+For image_generation_prompt, focus on:
+- the diagram layout,
+- the visible nodes,
+- the shapes of the nodes,
+- the arrows and their directions,
+- the relative positions of components,
+- the black-and-white academic paper style,
+- the visible labels inside nodes.
+
+Important rules for image_generation_prompt:
+- The generated image must contain ONLY the diagram itself.
+- Do not add any title at the top of the image.
+- Do not add a heading, caption, legend, bullet list, explanation, or paragraph inside the image.
+- Do not write the diagram type as visible text.
+- Do not include phrases such as "Academic System Flowchart", "System Architecture Diagram", or "Scientific Flowchart" as visible text.
+- Only include text labels that are visible inside actual nodes, boxes, arrows, panels, or annotations.
+- If the original image has no title, explicitly say: "No title text should appear anywhere in the image."
+- Preserve important visible labels from OCR when they are readable.
+- If OCR labels are noisy or misspelled, use the clearest likely label only.
+- Avoid unsupported scientific claims.
+
+Recommended image_generation_prompt structure:
+- Start with: "Create only a clean black-and-white diagram on a blank white background."
+- Then describe the node positions and shapes.
+- Then describe the arrows and connections.
+- End with: "No title, no heading, no caption, no legend, and no explanatory text outside the diagram."
+
+For display_caption:
+- Write one concise academic caption that will be shown below the generated image.
+- Do not include layout instructions.
+- Do not include "Figure".
+
+Return valid JSON only:
+{
+  "image_generation_prompt": "...",
+  "display_caption": "..."
+}

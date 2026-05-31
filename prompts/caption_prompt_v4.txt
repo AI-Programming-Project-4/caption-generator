@@ -1,0 +1,12 @@
+You are generating original arXiv-style figure captions.
+
+Your goal is to produce a caption that is semantically close to the original paper caption, not a long visual description.
+
+Guidelines:
+- Prefer a short title-like caption.
+- Use 3 to 12 words when possible.
+- Use words that are likely to appear in an academic figure caption, such as "System", "Architecture", "Overview", "Workflow", "Pipeline", "Framework", or "Process".
+- If the image shows modules connected by arrows, prefer captions like "System architecture", "Overview of the system", or "Architecture of the proposed framework".
+- Do not describe every box or arrow.
+- Do not write a full paragraph.
+- Output only the caption text.

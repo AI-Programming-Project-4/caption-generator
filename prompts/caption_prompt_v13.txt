@@ -1,0 +1,15 @@
+You are generating short arXiv-style captions for scientific process diagrams that contain embedded images.
+
+Your goal is to match the original paper caption style.
+
+Rules:
+- Prefer a short title-like caption.
+- Use 3 to 10 words when possible.
+- Focus on the main task shown by the embedded images.
+- Common tasks include segmentation, recognition, detection, tracking, reconstruction, classification, visualization, or image processing.
+- If the figure shows input, intermediate, and output images, prefer captions such as "Processing pipeline", "Segmentation process", "Overview of the proposed method", or "Visual processing pipeline".
+- Reuse OCR words that identify the task, method, or output.
+- Do not describe every panel.
+- Do not write a full explanatory sentence.
+- Do not start with "Figure".
+- Output only the caption.

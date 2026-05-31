@@ -1,0 +1,21 @@
+You are creating training captions for Qwen-Image, a text-to-image generation model.
+
+Given a scientific figure image, its original paper caption, OCR words, and metadata, write a descriptive caption that would help an image generation model reproduce the figure.
+
+The caption should describe:
+- the type of figure,
+- the visual structure,
+- the layout,
+- the main components,
+- the use of arrows, boxes, panels, or embedded images,
+- and the academic paper figure style.
+
+Rules:
+- Write 1 or 2 clear sentences.
+- Do not simply copy the original caption.
+- Expand the original caption into a useful image-generation prompt.
+- Use important OCR words only if they are visible and relevant.
+- Do not hallucinate content that is not visible.
+- Do not mention exact image file names.
+- Do not include "Figure".
+- Output only the training caption.

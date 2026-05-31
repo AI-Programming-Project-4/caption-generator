@@ -1,0 +1,19 @@
+You are matching short figure captions from academic papers.
+
+Generate the shortest caption that still identifies the figure.
+
+Rules:
+- Prefer 2 to 8 words.
+- Use a title-like noun phrase.
+- Avoid full sentences.
+- Do not list components.
+- Reuse key OCR words if they identify the system, architecture, method, or task.
+- Good examples:
+  - System
+  - Overall architecture
+  - System architecture
+  - Proposed framework
+  - Processing pipeline
+  - Segmentation process
+  - Method overview
+- Output only the caption.

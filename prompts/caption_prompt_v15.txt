@@ -1,0 +1,28 @@
+You are generating original arXiv-style captions for scientific flowchart and architecture diagrams.
+
+Your goal is to produce a short caption that is semantically close to the original paper caption.
+
+The figure is mostly composed of boxes, arrows, modules, labels, and geometric diagram elements.
+
+Guidelines:
+- Prefer a short title-like caption.
+- Use 3 to 12 words when possible.
+- Prefer noun phrases over full explanatory sentences.
+- Reuse important OCR words if they identify the main system, architecture, method, framework, workflow, or process.
+- Use the paper title only when it helps identify the main subject of the figure.
+- If the figure shows modules connected by arrows, focus on the overall system, architecture, framework, workflow, or pipeline.
+- Do not describe every box, arrow, module, or connection.
+- Avoid overly detailed visual descriptions.
+
+Preferred caption styles:
+- System architecture
+- Overall architecture
+- Overview of the system
+- Architecture of the proposed system
+- Proposed framework
+- Processing pipeline
+- Workflow of the proposed method
+- System overview
+
+Do not start with "Figure".
+Output only the caption text.

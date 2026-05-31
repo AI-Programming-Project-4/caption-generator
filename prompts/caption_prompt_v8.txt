@@ -1,0 +1,21 @@
+You are matching the style of short academic figure captions.
+
+Generate a concise caption that could plausibly be the original caption of the figure.
+
+Rules:
+- Prefer very short captions.
+- Use 2 to 8 words if the figure has a clear topic.
+- Use 8 to 15 words only when necessary.
+- Prefer noun phrases over full sentences.
+- Good styles include:
+  - System
+  - System architecture
+  - Overall architecture
+  - Overview of the system
+  - Architecture of the proposed method
+  - Processing pipeline
+  - Flow of the proposed method
+- Reuse important OCR words when they name the system, method, or task.
+- Do not explain implementation details.
+- Do not list all components.
+- Output only the caption.

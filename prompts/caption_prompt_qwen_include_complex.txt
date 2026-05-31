@@ -1,0 +1,87 @@
+You are creating Qwen-Image generation prompts for complex scientific multi-part figures that include embedded images, visual panels, waveforms, anatomical illustrations, example results, model diagrams, repeated processing paths, mirrored panels, or communication diagrams.
+
+Given the image, original caption, OCR words, and metadata, create:
+1. diagram_spec
+2. image_generation_prompt
+3. display_caption
+
+The image_generation_prompt must be a detailed layout specification, not a short caption.
+
+For diagram_spec, explicitly describe:
+- figure_type
+- orientation
+- major_regions
+- containers
+- nodes
+- embedded_visual_elements
+- connections
+- style_constraints
+
+For complex include-image figures, pay special attention to:
+- whether the figure is a wide landscape pipeline,
+- whether there are two parallel rows or channels,
+- whether there are two side-by-side panels such as Agent 1 and Agent 2,
+- whether there are photos, portraits, anatomical illustrations, waveform panels, plots, screenshots, neural maps, HMM chains, vocal tract diagrams, or small subfigures,
+- whether the layout is symmetric or mirrored,
+- how arrows connect visual panels to processing blocks and model structures,
+- whether the figure has a center communication region,
+- whether the figure has repeated structures on the left and right sides.
+
+For each visual region, specify:
+- content type such as portrait photo, waveform, anatomical illustration, vocal tract model, neural map, model block, HMM chain, result label, output arrow, or communication waveform,
+- relative position,
+- approximate size or role,
+- whether it is repeated, mirrored, or paired with another region.
+
+For each processing block or label, specify:
+- exact label if readable,
+- shape or visual form,
+- relative position,
+- whether it is a panel label, region label, node label, arrow label, or annotation.
+
+For each connection, specify:
+- source region or node,
+- target region or node,
+- arrow direction,
+- whether it is one-way or two-way,
+- whether it is straight, curved, diagonal, vertical, horizontal, solid, dashed, thick, or thin.
+
+For image_generation_prompt:
+- The prompt must be written as a structured layout instruction, not as a general summary.
+- For complex multi-panel figures, separate the instructions into:
+  1. Hard constraints
+  2. Overall layout
+  3. Left or upper region
+  4. Right or lower region
+  5. Center communication or connection region
+  6. Style constraints
+- Start by describing the canvas orientation and major regions.
+- Describe the figure region by region from left to right or top to bottom.
+- Explicitly preserve embedded visual panels instead of replacing them with plain boxes.
+- Explicitly preserve repeated rows, mirrored panels, or parallel channels when present.
+- If the figure contains two side-by-side panels, explicitly describe each panel separately.
+- If the two panels are symmetric or mirrored, state which elements should be repeated in both panels.
+- If panel labels such as "Agent 1" and "Agent 2" are visible in the original figure, preserve them as panel labels. These are allowed because they are part of the figure structure, not global titles.
+- Describe arrows and flow directions.
+- Preserve exact visible labels when readable.
+- Use clean academic paper figure style.
+- Prefer structural fidelity over simplification.
+- Do not add any global title, external caption, legend, bullet list, or explanatory paragraph outside the figure.
+- Preserve panel labels, region labels, node labels, arrow labels, and annotations only when they are part of the original figure structure.
+- Do not invent extra explanatory text.
+- Do not write the figure type itself as visible text.
+- If the original figure has no global title, do not create a new title.
+
+Important distinction:
+- A global title is a newly added heading above or outside the whole figure. Do not add this.
+- A panel label, such as "Agent 1", "Agent 2", "(a)", "(b)", or a short region label, is allowed only when it is visibly part of the original figure.
+- An annotation, such as "Perceptual measures" or "Motor commands", is allowed only when it is visibly part of the original figure.
+- The display_caption must never be included inside the generated image.
+
+For display_caption:
+- Write one concise academic caption.
+- Do not include layout instructions.
+- Do not include "Figure".
+- The display_caption will be shown below the generated image, not inside the image.
+
+Return valid JSON only with keys: diagram_spec, image_generation_prompt, display_caption.

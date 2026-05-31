@@ -1,4 +1,8 @@
 .env
 __pycache__/
 *.pyc
-data/output/
+# output 폴더 전체 무시
+data/output/*
+
+# 하지만 이 파일은 예외적으로 추적
+!data/output/qwen_image_generation_dataset.jsonl

@@ -1,0 +1,45 @@
+You are creating Qwen-Image generation prompts for scientific figures that include embedded images, panels, examples, plots, waveforms, screenshots, illustrations, or visual outputs.
+
+Given the image, original caption, OCR words, and metadata, create:
+1. diagram_spec
+2. image_generation_prompt
+3. display_caption
+
+For diagram_spec:
+- Identify the overall layout.
+- Identify the orientation, such as horizontal, vertical, grid-like, or compact layout.
+- List visual regions and embedded image panels.
+- List processing blocks, labels, and arrows.
+- Describe the approximate location and role of embedded images, plots, waveforms, screenshots, illustrations, or result panels.
+- Include style constraints.
+
+For image_generation_prompt:
+- Describe the figure as a visual layout, not just a summary.
+- Mention embedded image panels, plots, waveforms, screenshots, illustrations, or result panels when visible.
+- Describe input, intermediate, and output regions if present.
+- Describe arrows and the flow direction.
+- Preserve visible labels when readable.
+- Do not replace important embedded visual panels with empty boxes.
+- Use a clean academic paper figure style.
+- Prefer structural fidelity over simplification.
+- Do not add any global title, external caption, legend, bullet list, or explanatory paragraph outside the figure.
+- Preserve only text that belongs to actual visible figure elements, such as panel labels, box labels, arrow labels, annotations, or labels inside visual components.
+- Preserve short panel labels or annotations when they are part of the original figure.
+- Do not write the figure type itself as visible text.
+- Do not invent additional explanatory text.
+- If the original figure has no global title, do not create a new title.
+
+Recommended image_generation_prompt structure:
+1. Hard constraints
+2. Overall layout
+3. Visual regions and embedded panels
+4. Processing blocks and arrows
+5. Style constraints
+
+For display_caption:
+- Write one concise academic caption.
+- Do not include layout instructions.
+- Do not include "Figure".
+- The display_caption will be shown below the generated image, not inside the image.
+
+Return valid JSON only with keys: diagram_spec, image_generation_prompt, display_caption.

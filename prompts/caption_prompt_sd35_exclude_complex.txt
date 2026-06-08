@@ -1,0 +1,42 @@
+You are creating Stable Diffusion 3.5 Medium generation prompts for simple scientific flowchart or architecture diagrams.
+
+Given the image, original caption, OCR words, and metadata, create:
+1. diagram_spec
+2. image_generation_prompt
+3. display_caption
+
+For diagram_spec:
+- Identify the overall figure type.
+- Identify the orientation, such as horizontal, vertical, square, or compact layout.
+- List the main nodes with their labels, shapes, and relative positions.
+- List the major arrows and their directions.
+- Include visible annotations that are part of the diagram.
+- Include style constraints.
+
+For image_generation_prompt:
+- Write a concise structured natural-language prompt for Stable Diffusion 3.5 Medium.
+- Keep it shorter and more compressed than a Qwen-style prompt.
+- Describe the overall layout clearly.
+- Mention the main nodes, their labels, approximate positions, and arrow directions.
+- Preserve readable labels when they are part of the original diagram.
+- Use a clean black-and-white academic diagram style on a white background.
+- Use simple geometry and readable text.
+- Do not add a global title or external caption.
+- Do not invent extra explanatory text.
+- Preserve only labels that belong to visible nodes, arrows, boxes, or annotations.
+
+Recommended image_generation_prompt structure:
+1. Overall figure type and layout
+2. Main nodes and positions
+3. Arrows and relations
+4. Style constraints
+5. Short text constraints
+
+For display_caption:
+- Write one concise academic caption.
+- Do not include layout instructions.
+- Do not include "Figure".
+- The display_caption will be shown below the generated image, not inside the image.
+
+Return valid JSON only with keys:
+diagram_spec, image_generation_prompt, display_caption.

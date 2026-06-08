@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 from pathlib import Path
 
 from openai import OpenAI
@@ -21,27 +22,20 @@ IMAGE_INCLUDE_DIR = "data/images/images_flowcharts_include_image_final"
 
 PROMPT_DIR = "prompts"
 
-OUTPUT_PATH = "data/output/qwen_image_generation_dataset.jsonl"
+# SD3.5 Medium 전용 출력 파일
+OUTPUT_PATH = "data/output/sd35_generation_dataset_with_spec.jsonl"
 
-# 유형별로 생성할 개수 지정
-SAMPLES_PER_TYPE = {
-    "exclude_simple": 30,
-    "exclude_complex": 30,
-    "include_simple": 10,
-    "include_complex": 10,
-}
 
 # 복잡도 분류 기준
-# OCR label 수가 많거나, include_image이면 복잡 구조로 보낼 확률이 높음
 COMPLEX_OCR_THRESHOLD_EXCLUDE = 8
 COMPLEX_OCR_THRESHOLD_INCLUDE = 6
 
-# 유형별 Qwen 이미지 생성용 프롬프트 생성 instruction 지정
+# SD3.5 Medium 전용 프롬프트 파일 매핑
 PROMPT_BY_GENERATION_TYPE = {
-    "exclude_simple": "caption_prompt_qwen_exclude_simple",
-    "exclude_complex": "caption_prompt_qwen_exclude_complex",
-    "include_simple": "caption_prompt_qwen_include_simple",
-    "include_complex": "caption_prompt_qwen_include_complex",
+    "exclude_simple": "caption_prompt_sd35_exclude_simple",
+    "exclude_complex": "caption_prompt_sd35_exclude_complex",
+    "include_simple": "caption_prompt_sd35_include_simple",
+    "include_complex": "caption_prompt_sd35_include_complex",
 }
 
 
@@ -130,13 +124,6 @@ def resolve_image_path_and_type(record: dict) -> tuple[str, str]:
 
 
 def classify_generation_type(record: dict) -> str:
-    """
-    기존 flowchart_type(exclude/include)에 복잡도(simple/complex)를 더해 generation_type을 만든다.
-
-    기준은 보수적으로 둔다.
-    - include_image는 이미지 패널/파형/서브도식이 섞여 복잡할 가능성이 높음
-    - OCR label 수가 많으면 복잡 구조로 간주
-    """
     flowchart_type = record["_flowchart_type"]
     image_ocr = record.get("image_ocr", [])
 
@@ -204,7 +191,7 @@ def filter_existing_image_records(records: list[dict]) -> list[dict]:
     return valid_records
 
 
-def select_records_for_generation(valid_records: list[dict]) -> list[dict]:
+#def select_records_for_generation(valid_records: list[dict]) -> list[dict]:
     selected = []
 
     for generation_type, limit in SAMPLES_PER_TYPE.items():
@@ -222,7 +209,27 @@ def select_records_for_generation(valid_records: list[dict]) -> list[dict]:
         )
 
     return selected
+def select_records_for_generation(valid_records: list[dict]) -> list[dict]:
+    """
+    참고 폴더에 실제로 존재하고, metadata에서 caption이 확인된 모든 이미지를 선택한다.
+    유형별 개수 제한은 적용하지 않는다.
+    """
+    selected = sorted(
+        valid_records,
+        key=lambda record: str(record.get("image_filename") or record.get("_resolved_image_path") or "")
+    )
 
+    generation_counts = {}
+
+    for record in selected:
+        generation_type = record.get("_generation_type", "unknown")
+        generation_counts[generation_type] = generation_counts.get(generation_type, 0) + 1
+
+    print("[Select] Generate all valid records")
+    print(f"Total selected records: {len(selected)}")
+    print(f"Selected records by generation type: {generation_counts}")
+
+    return selected
 
 def encode_image_to_base64(image_path: str) -> str:
     path = Path(image_path)
@@ -253,11 +260,19 @@ def clean_text(value: str) -> str:
     return str(value).strip()
 
 
+def compress_whitespace(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def limit_sentence_count(text: str, max_sentences: int = 6) -> str:
+    parts = re.split(r"(?<=[.!?])\s+", text.strip())
+    parts = [p.strip() for p in parts if p.strip()]
+    if len(parts) <= max_sentences:
+        return " ".join(parts)
+    return " ".join(parts[:max_sentences])
+
+
 def parse_json_response(text: str) -> dict:
-    """
-    모델이 반환한 JSON 문자열을 dict로 파싱한다.
-    혹시 ```json ... ``` 코드블록으로 감싸져 있어도 처리한다.
-    """
     text = text.strip()
 
     if text.startswith("```"):
@@ -283,6 +298,9 @@ def parse_json_response(text: str) -> dict:
         if key not in data:
             raise ValueError(f"Missing key in model output: {key}")
 
+    if not isinstance(data["diagram_spec"], dict):
+        raise ValueError("diagram_spec must be a JSON object.")
+
     data["image_generation_prompt"] = clean_image_generation_prompt(
         data["image_generation_prompt"]
     )
@@ -290,50 +308,94 @@ def parse_json_response(text: str) -> dict:
         data["display_caption"]
     )
 
-    if not isinstance(data["diagram_spec"], dict):
-        raise ValueError("diagram_spec must be a JSON object.")
-
     return data
 
 
 def clean_image_generation_prompt(prompt: str) -> str:
     """
-    Qwen에 넣을 이미지 생성 프롬프트 정리.
-    이미지 안에 제목/캡션/설명문이 들어가지 않도록 앞뒤로 안전 문구를 보강한다.
+    SD3.5 Medium 전용 prompt 정리 함수.
+
+    목표:
+    - Qwen 스타일의 긴 구조형 prompt를 더 짧고 압축된 형태로 정리
+    - 부정 지시를 줄이고, 핵심 구조/레이아웃/라벨/화살표 정보만 남기기
+    - 3~6문장 정도의 자연어 prompt로 유지
     """
     prompt = clean_text(prompt)
 
+    # 앞머리 제거
     prefixes = [
         "Image generation prompt:",
-        "Qwen image generation prompt:",
         "Prompt:",
+        "Generated prompt:",
+        "Stable Diffusion 3.5 Medium prompt:",
+        "SD3.5 prompt:",
     ]
-
     for prefix in prefixes:
         if prompt.lower().startswith(prefix.lower()):
             prompt = prompt[len(prefix):].strip()
 
-    front_rule = (
-        "Create only the diagram or figure content on a blank white background. "
-        "Do not add any title, heading, caption, legend, bullet list, explanatory paragraph, "
-        "or extra text outside the diagram. "
-        "Only include text labels that are part of visible nodes, boxes, arrows, panels, or annotations. "
-    )
+    # Qwen 스타일 섹션 헤더 제거
+    section_headers = [
+        "Hard constraints:",
+        "Overall layout:",
+        "Left or upper region:",
+        "Right or lower region:",
+        "Center communication or connection region:",
+        "Left panel:",
+        "Right panel:",
+        "Center region:",
+        "Style constraints:",
+        "Style:",
+        "Nodes and positions:",
+        "Connections:",
+        "Visual regions and embedded panels:",
+        "Processing blocks and arrows:",
+        "Major regions and containers:",
+        "Main containers and grouped regions:",
+        "Important nodes and module layout:",
+        "Major connections and arrow styles:",
+        "Visual panels and their roles:",
+        "Overall figure type and layout:",
+    ]
 
-    end_rule = (
-        " No title text should appear anywhere in the image. "
-        "Do not write the diagram type as visible text. "
-        "Do not include any explanatory text outside the diagram. "
-        "Prefer structural fidelity over artistic variation."
-    )
+    for header in section_headers:
+        prompt = prompt.replace(header, "")
 
-    return front_rule + prompt + end_rule
+    # 과한 부정 지시 정리
+    long_negative_patterns = [
+        r"Do not add any global title, external caption, legend, bullet list, or explanatory paragraph outside the (figure|diagram)\.?",
+        r"Do not add any title, heading, caption, legend, bullet list, explanatory paragraph, or extra text outside the (figure|diagram)\.?",
+        r"Do not write the (figure|diagram) type itself as visible text\.?",
+        r"Do not invent extra explanatory text\.?",
+        r"Do not include any explanatory text outside the (figure|diagram)\.?",
+        r"The display_caption must not be placed inside the generated image\.?",
+        r"Preserve only labels that belong to visible nodes, panels, containers, arrows, or annotations\.?",
+    ]
+    for pattern in long_negative_patterns:
+        prompt = re.sub(pattern, "", prompt, flags=re.IGNORECASE)
+
+    # 중복 문장 정리
+    prompt = compress_whitespace(prompt)
+
+    # 문장 보강
+    if not re.search(r"\bwhite background\b", prompt, flags=re.IGNORECASE):
+        prompt = "A clean academic figure on a white background. " + prompt
+
+    if not re.search(r"\bNo global title or external caption\b", prompt, flags=re.IGNORECASE):
+        prompt = prompt.rstrip(". ") + ". No global title or external caption."
+
+    prompt = compress_whitespace(prompt)
+    prompt = limit_sentence_count(prompt, max_sentences=6)
+
+    # 길이 제한
+    max_chars = 900
+    if len(prompt) > max_chars:
+        prompt = prompt[:max_chars].rsplit(".", 1)[0] + "."
+
+    return prompt
 
 
 def clean_display_caption(caption: str) -> str:
-    """
-    이미지 아래에 따로 보여줄 caption 정리.
-    """
     caption = clean_text(caption)
 
     prefixes = [
@@ -357,7 +419,7 @@ def clean_display_caption(caption: str) -> str:
 # Prompt generation
 # =========================
 
-def generate_qwen_prompt_bundle(record: dict, prompt_text: str) -> dict:
+def generate_sd35_bundle(record: dict, prompt_text: str) -> dict:
     image_path = record["_resolved_image_path"]
     flowchart_type = record["_flowchart_type"]
     generation_type = record["_generation_type"]
@@ -374,26 +436,22 @@ def generate_qwen_prompt_bundle(record: dict, prompt_text: str) -> dict:
     user_text = f"""
 You are given an existing scientific image-caption pair.
 
-Your task is to create THREE outputs:
+Your task is to create THREE outputs for Stable Diffusion 3.5 Medium:
 
-1. diagram_spec:
+1. diagram_spec
 A structured JSON object that describes the figure layout.
-It should summarize:
-- figure_type
-- orientation
-- major_regions
-- containers
-- nodes
-- embedded_visual_elements
-- connections
-- style_constraints
 
-2. image_generation_prompt:
-A detailed prompt that will be given directly to Qwen-Image.
-It should be based on diagram_spec and should describe the figure in enough visual detail to generate a similar image.
-It must not ask Qwen-Image to draw a title, caption, legend, bullet list, or explanatory paragraph inside the image.
+2. image_generation_prompt
+A prompt that will be given directly to Stable Diffusion 3.5 Medium.
+This prompt must be shorter and more compact than a Qwen-style prompt.
+Use concise structured natural language.
+Prefer about 3 to 6 sentences.
+Focus on the main layout, important nodes or panels, major arrows, and readable labels.
+Avoid long negative instruction lists.
+Use at most one short negative sentence such as:
+"No global title or external caption."
 
-3. display_caption:
+3. display_caption
 A concise academic caption that will be shown below the generated image.
 It must not be drawn inside the image.
 
@@ -434,25 +492,25 @@ Return valid JSON only, with exactly these keys:
             {
                 "role": "system",
                 "content": (
-                    "You create structured diagram specifications, Qwen-Image generation prompts, "
+                    "You create structured diagram specifications, Stable Diffusion 3.5 Medium generation prompts, "
                     "and separate display captions for scientific figures. "
                     "Return only valid JSON. Do not output markdown, commentary, or analysis."
-                )
+                ),
             },
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "input_text",
-                        "text": user_text
+                        "text": user_text,
                     },
                     {
                         "type": "input_image",
-                        "image_url": image_data_url
-                    }
-                ]
-            }
-        ]
+                        "image_url": image_data_url,
+                    },
+                ],
+            },
+        ],
     )
 
     return parse_json_response(response.output_text)
@@ -485,16 +543,17 @@ def make_output_record(
 
         "diagram_spec": generated["diagram_spec"],
 
-        # Qwen에 직접 넣을 이미지 생성용 프롬프트
+        # SD3.5 Medium에 직접 넣을 프롬프트
         "image_generation_prompt": generated["image_generation_prompt"],
 
-        # 생성된 이미지 아래에 별도로 보여줄 caption
+        # 생성된 이미지 아래에 따로 보여줄 캡션
         "display_caption": generated["display_caption"],
 
         "image_ocr": record.get("image_ocr", []),
         "matched_keywords": record.get("matched_keywords", []),
 
         "prompt_version": prompt_version,
+        "target_model": "sd3.5-medium",
     }
 
 
@@ -516,7 +575,7 @@ def main():
     selected_records = select_records_for_generation(valid_records)
     print(f"Selected records: {len(selected_records)}")
 
-    print("[4] Loading prompts by generation type...")
+    print("[4] Loading SD3.5 prompt files...")
     prompt_cache = {}
 
     for generation_type, prompt_version in PROMPT_BY_GENERATION_TYPE.items():
@@ -526,7 +585,7 @@ def main():
         }
         print(f"{generation_type}: {prompt_version}")
 
-    print("[5] Generating diagram specs and Qwen-Image prompts...")
+    print("[5] Generating diagram specs and SD3.5 prompts...")
 
     for i, record in enumerate(selected_records):
         generation_type = record["_generation_type"]
@@ -549,7 +608,7 @@ def main():
         print(f"Original caption: {record.get('caption', '')}")
 
         try:
-            generated = generate_qwen_prompt_bundle(
+            generated = generate_sd35_bundle(
                 record=record,
                 prompt_text=prompt_text
             )

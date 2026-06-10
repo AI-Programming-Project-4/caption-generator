@@ -18,8 +18,8 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 METADATA_PATH = "data/input/metadata.jsonl"
 
-IMAGE_EXCLUDE_DIR = "data/images/images_flowcharts_exclude_image_final"
-IMAGE_INCLUDE_DIR = "data/images/images_flowcharts_include_image_final"
+IMAGE_EXCLUDE_DIR = "data/images/images_flowcharts_exclude_image_final_2"
+IMAGE_INCLUDE_DIR = "data/images/images_flowcharts_include_image_final_2"
 
 PROMPT_DIR = "prompts"
 

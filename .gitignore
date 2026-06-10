@@ -6,4 +6,6 @@ data/output/*
 data/Archive/*
 
 # 하지만 이 파일은 예외적으로 추적
-## !data/output/
+!data/output/caption_sd35.txt
+!data/output/prompts_sd35.txt
+!data/output/sd35_generation_dataset_with_spec.jsonl

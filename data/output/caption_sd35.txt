@@ -1,0 +1,359 @@
+===== 000000 =====
+A simple flowchart illustrating the system with nodes Population, Theorem Prover, Evaluation, and Genetic Engine connected by directional arrows representing their interactions.
+
+===== 000001 =====
+Overview of an adaptive information filtering agent showing Memory, Learning, and Matching components and their interactions with incoming documents and user feedback.
+
+===== 000002 =====
+System architecture showing sequential components filter, boole, and int connected by labeled arrows QBF and SOP, with protocol mapping returning from int to filter.
+
+===== 000041 =====
+The architecture of a stigmergic policy illustrating the state-free RL interacting with memory via directed arrows.
+
+===== 000051 =====
+Flow diagram illustrating the system architecture with sequential processing modules labeled from Input through enhanced dlv parser, Rewriter, dlv core, Filtering, to Output.
+
+===== 000071 =====
+The overall design of the system to analyze Japanese zero pronouns showing process flow and supporting resources.
+
+===== 000072 =====
+The overall design of the speech-driven text retrieval system illustrating user speech processing, speech recognition linked to acoustic and language models, adaptation driven by a collection resource with off-line and on-line adaptation paths, and final textual retrieval outputs.
+
+===== 000089 =====
+A Bayesian network illustrating causal relationships among burglary, earthquake, alarm, phone call, and radio announcement nodes.
+
+===== 000099 =====
+Overview diagram of a speech-driven retrieval system illustrating user speech processing through speech recognition with acoustic and language models, followed by transcription, text retrieval using a target IR collection, and resulting in retrieved documents.
+
+===== 000106 =====
+System architecture showing integration of Time Traveler, WTX, Target System with Wdb task, Target server, and Tornado 2 IDE and tools across REPLAY TOOL, TARGET, and HOST regions.
+
+===== 000119 =====
+Flowchart illustrating the system composition of World and Robot, showing bidirectional communication between the external system, sensorimotor devices, and brain components.
+
+===== 000128 =====
+State diagram of a multi-robot foraging system illustrating the states Searching, Homing, and two Avoiding conditions, with transitions shown by directed arrows.
+
+===== 000129 =====
+State diagram of foraging robots illustrating the transitions and interactions among states S, B, H, M, and A with labeled transition rates and feedback loops.
+
+===== 000130 =====
+Flowchart of the robots' controller illustrating decision processes for detecting objects, avoiding obstacles, gripping actions, and cooperative help.
+
+===== 000131 =====
+Macroscopic state diagram of a multi-robot system showing transitions between the searching and gripping states with labeled arrows indicating successful and unsuccessful collaboration.
+
+===== 000208 =====
+Authentication system model illustrating the encoding of source S, processing through the channel, and decoding to produce output Sh.
+
+===== 000211 =====
+Two-layer authentication system operation showing an Encoder feeding a Channel that branches to two Decoders, illustrating the signal flow with labeled arrows.
+
+===== 000218 =====
+The multi-level architecture for the defending vehicles used in our implementation.
+
+===== 000219 =====
+The multi-vehicle architecture for attackers illustrating three parallel sequences of attacker intelligence leading to trajectory generation and individual attacker nodes.
+
+===== 000382 =====
+Overview of the debugging process illustrating the flow from Dataset to ILP Algorithm, Query Trace, and through Trace Simulator and Delta Debugger engines.
+
+===== 000415 =====
+A simple RDF network diagram illustrating 'Marko' connected by 'rdf:type' arrows to 'Cognitive Scientist' and 'Computer Scientist'.
+
+===== 000416 =====
+An ontology and an instance represented within a Triple Store RDF network showing the relationship rdf:type from instance Marko to ontology class Human and a self-referential hasFriend property with multiplicity.
+
+===== 000446 =====
+Block diagram illustrating the sequential stages in modeling MID for HIV data analysis, highlighting the role of a genetic algorithm optimizing discretised partitions with feedback loops.
+
+===== 000459 =====
+Flowchart illustrating the framework for using camera-phones in remote field exploration by capturing images, transmitting them, processing remotely, uploading marked images, and downloading results.
+
+===== 000478 =====
+Two RDF triples represented as an RDF network with nodes lanl:marko, lanl:markos_arm, and lanl:jhw connected by labeled relationships lanl:hasBodyPart and lanl:worksWith.
+
+===== 000543 =====
+Flow chart illustrating the sequence and decision logic of the proposed method, including initialization, iterative solution updates, decision branching, and final reporting.
+
+===== 000545 =====
+Comparison of two frameworks showing a flow from the Global Method node to the Backpropagation node with a single directional arrow between them.
+
+===== 000546 =====
+Comparison between two frameworks showing the traditional 'Global Method' and the 'TRUST-TECH' approach including the neighborhood-search stage and backpropagation with bidirectional connections.
+
+===== 000547 =====
+Block diagram illustrating the TRUST-TECH based training method, showing the progression from a global method through interconnected Backpropagation and Tier-by-tier Search processes within TRUST-TECH, leading to promising local minima identification and the global minimum of the error surface.
+
+===== 000554 =====
+Flowchart illustrating the smoothing algorithm with iterative initialization, EM application, likelihood surface update, conditional decision, and reporting max solution steps.
+
+===== 000555 =====
+Block diagram illustrating the traditional approach and the smoothing approach with combined global and EM algorithm methods leading to the original log-likelihood surface and subsequently to the optimal parameter set.
+
+===== 000556 =====
+Block diagram illustrating the traditional and smoothing approaches with interconnected modules representing algorithmic steps and parameter optimization.
+
+===== 000557 =====
+Block diagram illustrating the smoothing approach by convolving the original likelihood surface with a Gaussian convolution kernel to obtain a smooth likelihood surface.
+
+===== 000604 =====
+A diagram depicting semantic network relationships showing ontology and instance separation with labeled arrows connecting lanl:Human, lanl:marko, and lanl:johan nodes.
+
+===== 000605 =====
+Diagram illustrating the relationship between a semantic network instance and its ontology with a labeled flow arrow.
+
+===== 000615 =====
+Architecture of the semi-automatic framework using the Brown Corpus and the Names Corpus for POS tagging, naming, pronoun identification, modality disambiguation, and classification, illustrating data flow from input to output.
+
+===== 000623 =====
+Overview of the methodology steps showing Input and Model images leading through watershed partitioning and ARG formation to final segmentation output.
+
+===== 000634 =====
+Architecture of an interface showing the Ground Operator connected through input and output devices to a central Ground Operator Interface comprising Interpretation, generation, Interaction Management, and Transciption nodes, linking to multiple Vehicles (MAS).
+
+===== 000677 =====
+A detailed flowchart illustrating the parsing mechanism steps from content specification through extraction, cleaning, counting, saving, and termination.
+
+===== 000741 =====
+Flowchart of the public-key steganography framework showing initialization with a temporary key, host signal input, and a symmetric steganographic scheme enclosing the permanent phase producing the marked signal.
+
+===== 000757 =====
+A simple flowchart illustrating the Lparse and Smodels system transforming an Answer Set Program through grounding and computing Answer Sets.
+
+===== 000759 =====
+A reinforcement learning flowchart illustrating the interaction between Agent and Environment with labeled feedback arrows representing states, rewards, and actions.
+
+===== 000804 =====
+Multi-Agent framework architecture showing three layers of agents processing media outlets data from collection to blog posting.
+
+===== 000841 =====
+Block diagrams showing the conventional and proposed methods where in the conventional method image processing includes pre-processing, interpolation, and post-processing before encoding, storage, and decoding.
+
+===== 000842 =====
+Block diagrams of the conventional and proposed methods showing image processing stages and compression stages, highlighting the sequence of pre-processing, encoding, storage, decoding, interpolation, and post-processing.
+
+===== 000884 =====
+State diagram of user behavior for a single story showing transitions from the initial state through upcoming and front pages, friends, and finally to the vote state with labeled arrows representing transition parameters.
+
+===== 000913 =====
+An example of a coauthorship grammar walk showing a single grammar walker at time steps marked by numbered circles. The walker moves between resource nodes labeled by author names and article identifiers, connected by 'core:created' relations.
+
+===== 000996 =====
+Multi-relational directed network of articles and scholars showing authorship and citation relationships.
+
+===== 001080 =====
+A four-layer architecture designed to protect sensor networks against misbehavior and abuse.
+
+===== 001118 =====
+Three flowchart panels illustrate: (a) the conventional fingerprint enhancement method, (b) mutual dependence among subtasks with bidirectional links, and (c) an iterative scheme implementing mutual dependence.
+
+===== 001120 =====
+Flowchart showing the pipeline of system components for document compression, including input processing, parsing stages, generation, decoding, and output summary.
+
+===== 001168 =====
+A block diagram illustrating the update summary generation process including document input, embedding, summary generation, iterative checking, and storage.
+
+===== 001270 =====
+A principal schematic of a thinking quantum system illustrating decision-making through interconnected modules including strategic supporter, prospect generators, measuring device, and prospect analyzer with input signals and energy supply.
+
+===== 001329 =====
+The architecture of the active learning framework is shown with training steps labeled T and classification steps labeled C, illustrating iterative cycles between classifiers, data, scoring, ranking, and the main classifier.
+
+===== 001331 =====
+The cognitive-motivational-emotive system illustrating the appraisal-coping flow among environment, situational construal, goals/beliefs/intentions, appraisal outcomes, and coping strategies. Adapted from Smith and Lazarus (1990).
+
+===== 001360 =====
+Attack graph representing a simplified data center network with three main nodes connected sequentially by labeled arrows.
+
+===== 001469 =====
+Flowchart illustrating the process of evolving parameters of agent-based models using a genetic algorithm on daily financial price series, evaluating best third-party parameter generations by distance measures, and subsequent analysis and validation of market types and predicted price changes.
+
+===== 001475 =====
+The MDD architecture of s-COMMA illustrating modeling and mapping tool components, their meta-models, and transformation relationships.
+
+===== 001542 =====
+Block diagram illustrating the two-stage model parameter estimation process with labeled steps for saliency map extraction and eye movement analysis using EM and Viterbi methods.
+
+===== 001548 =====
+A schematic illustration of the proposed mechanism for learning better context characterizations showing user interaction, context modeling, query formulation, search process, results processing, and iterative enrichment through topic descriptors and discriminators.
+
+===== 001581 =====
+Architecture of the Electronic Geometry Textbook system showing key modules such as Manipulation, Consistency-checking, Textbook knowledge base, User interface with a user icon, Documents output, and External geometry software packages, with labeled directional relations indicated by arrows.
+
+===== 001582 =====
+The workflow of communication with geometry software packages showing transformation from customized concept definitions and statements to final documents.
+
+===== 001583 =====
+Block diagram representing the SLAH flow with modules for Statistical Learning, Optimization, Network/Simulator, and Initialization connected by labeled arrows indicating parameters and data flow.
+
+===== 001731 =====
+The framework of dimension reduction illustrating sequential and feedback steps from high-dimensional microarray data to class prediction and model assessment.
+
+===== 001809 =====
+Block diagram depicting the proposed region-based image querying technique with labeled processing stages and feedback paths.
+
+===== 001848 =====
+Architecture of a typical search engine illustrating the Client, Broker, and multiple Index servers arranged in a vertical and horizontal layout with directional communication arrows.
+
+===== 001874 =====
+A transformation from a system (S1) to a system (S2) connected by a constraint labeled W.
+
+===== 002004 =====
+Flowchart illustrating the system concept in MDSD terminology, showing relationships among Programmer, Programming Environment components, Domain Information, Domain Expert, and robotic Domain with labeled arrows and embedded images.
+
+===== 002043 =====
+The architecture of our question answering system illustrating the flow from question input through morpho-syntactic analysis, lexical disambiguation resources, and dependency structures leading to the final answer.
+
+===== 002063 =====
+System pipeline for the discourse parser illustrating labeled components and processing steps in a structured flowchart.
+
+===== 002162 =====
+A general IQBE architecture showing information flow between User, document examples, IQBE system, Information Retrieval System, and Document database.
+
+===== 002163 =====
+Flowchart depicting the Training Set Generation process with document matching, relevance matrix, algorithmic query formulation, and iterative decision steps leading to termination or further processing within a Wiki Based Information Retrieval System.
+
+===== 002171 =====
+MySNOM software architecture illustrating layered components including Access Control, Presentation, Business Logic, and Persistence layers with modules and data flow connections.
+
+===== 002175 =====
+Diagram showing the architecture of the integrated model used to perform queries in the analysis of cancer omics data.
+
+===== 002176 =====
+Flowchart illustrating the Populous workflow with five sequential steps from creating a template to generating an ontology.
+
+===== 002177 =====
+Flowchart illustrating the extraction and integration of knowledge from multiple biomedical data sources into an ASP system to answer queries.
+
+===== 002184 =====
+Flowchart illustrating the OSLOM algorithm workflow, showing sequential cluster cleaning, internal structure checks, module unions, stochastic cover iterations, and hierarchical level building with feedback loops.
+
+===== 002225 =====
+Data flow diagram illustrating shape matching steps: (a) extraction of a structural pattern from particle structure into a shape descriptor; (b) comparison of query and multiple reference descriptors via a similarity metric producing structure identification, order parameters, and correlation functions.
+
+===== 002318 =====
+Flow diagram detailing the module for determining the dominant source of impairment in video frames under challenging lighting conditions.
+
+===== 002321 =====
+Flow diagram of the core enhancement algorithm with motion estimation acceleration, illustrating processing branches for I frame and P frame with conditional decision nodes and merging paths.
+
+===== 002338 =====
+The framework of the proposed method illustrating training and testing stages of GLOH feature extraction, feature selection via ridge regression, and age estimation function.
+
+===== 002406 =====
+Diagram illustrating the inherited rules and learning framework with sequential modules and feedback loops, highlighting key stages of state evaluation, decision surfaces, model construction, and rule extension, alongside improvement pathways.
+
+===== 002504 =====
+Training a committee member process illustrating input MNIST digit normalization and distortion steps before feeding into the neural network.
+
+===== 002650 =====
+The figure shows the covariance reduction from feeding back the syntactic level description to the Bayesian tracking module.
+
+===== 002654 =====
+Framework of the proposed expert system for detecting automobile insurance fraud, illustrating the data representation, detection of suspicious components and entities, and visualization of results.
+
+===== 002738 =====
+A diagram showing the typical interleaving of model learning and planning in a model-based agent, illustrating the flow between updating the model, planning, returning policy actions, and the interactions with the environment.
+
+===== 002743 =====
+Schematic diagram illustrating the training and retrieval process, showing training and testing data inputs with audio waveforms and collaborative filter, feeding similarity estimation, codebook training, vector quantization, and MLR modules, culminating in retrieval with multiple recommendations.
+
+===== 002748 =====
+Block diagram illustrating the Residual Moment Based Feature Extraction Technique with LP Analysis, Inverse Filtering, Magnitude Normalization, and Higher Order Moment Computation modules.
+
+===== 002818 =====
+The main parts of the decision making framework model illustrating nodes for model update, multi-objective optimization, and observation connected with labeled arrows representing information flow and feedback.
+
+===== 002835 =====
+System overview flowchart showing the placement classifier trained via supervised learning using training data and a learning algorithm, validated by simulation, and finally feeding the robot controller with a robotic arm illustration.
+
+===== 002840 =====
+Block diagram of the recognition system illustrating sequential processing steps from input image through pre-processing and segmentation, branching into answer recognition and barcode decoding, producing test answers and barcode values.
+
+===== 002912 =====
+The flowchart of the proposed CAD system for automatic TIB detection, showing sequential processing steps from image acquisition to classification.
+
+===== 003008 =====
+Block diagram of the traffic state monitoring system illustrating the learning path with blue arrows and classification path with red arrows through ROI Selection, Feature Selection, clustering steps, and final classification.
+
+===== 003074 =====
+Schematic flowchart of the proposed scheme showing the ENCODER converting images I1 and I2 through linear measurements to Y1 and Y2, which are processed in the DECODER for correlation estimation and optional joint reconstruction producing the reconstructed images.
+
+===== 003106 =====
+System concept illustrating the flow from sensor shirt data acquisition through signal processing to the electric wheelchair, including interactive control via a virtual reality environment and human control feedback loop.
+
+===== 003165 =====
+Flowchart illustrating a TM2 experiment with components Corpus, Tokenizer, and Gazetteer connected vertically by labeled data flow arrows String and Token.
+
+===== 003166 =====
+Flowchart diagram depicting a TM2 experiment with data flowing from Corpus to Tokenizer, then to Gazetteer and Gold modules within a synthesis container, leading to a SimpleEvaluation step and the final evaluation result.
+
+===== 003168 =====
+Flowchart of the TM2-Experiment illustrating the data flow from Corpus through TrainData and TestData to classification and evaluation, ending in the final numeric result.
+
+===== 003245 =====
+Flowchart depicting the computation of n k-similar solutions using SolveN.lp, Distance.lp, and Constraint.lp modules with inputs k and n.
+
+===== 003251 =====
+Diagram illustrating the proposed hierarchical model with PCA model, object shape, and noisy point cloud inputs flowing into prior model and energy equations.
+
+===== 003254 =====
+Overall system architecture illustrating the flow and interactions between components including the sentence input, parsing, lexicon modules, parameter estimation, and final lexicon generation.
+
+===== 003267 =====
+PAQ8 architecture consisting of four sequential modules: prediction models, model mixing, adaptive probability maps, and arithmetic coding.
+
+===== 003464 =====
+Pipeline illustrating signal capture and reconstruction using Progressive Transform Coding and Randomized sparsity coding methods with labeled stages for projections, capture, reconstruction, and data flow.
+
+===== 003496 =====
+Execution pipeline showing data flow from disk to memory buffer, then to matrix factorization using stochastic gradient descent.
+
+===== 003509 =====
+Overview of the development process illustrating the flow from DiaSpec declarations through the Compiler to the Programming Framework with Developer's implementation.
+
+===== 003610 =====
+A generic communication system without feedback showing encoder, channel, and decoder stages with corresponding inputs and outputs.
+
+===== 003621 =====
+Four computers arranged in a ring topology connected by directional arrows indicating propagating failures in the network.
+
+===== 003923 =====
+Flowchart illustrating the vehicle recognition method, showing parallel pipelines from vehicle model and input image through segments processing, fuzzy rules, and reasoning system leading to recognized vehicles.
+
+===== 003956 =====
+Framework diagram illustrating the components and workflow of the proposed interactive character posing approach, showing training and encoding phases with labeled nodes and directional arrows.
+
+===== 003972 =====
+A flowchart illustrating functional data analysis transformation steps applied to fractal descriptors, showing the progression from object through fractal curves and coefficients to classification.
+
+===== 003975 =====
+Flowchart illustrating the proposed cell counting approach with sequential steps of pre-processing, k-means segmentation, contour processing, and ellipse fitting.
+
+===== 004035 =====
+A framework for model learning and empowerment-based exploration depicting the interaction between Environment, Agent, Model Mt, and an Action selector using labeled arrows representing state observations, actions, model updates, queries, and predictions.
+
+===== 004090 =====
+A simple flowchart illustrating the training process where the input Image passes through preprocessing P, then undergoes distortion D within the TRAINING block before being fed to the DNN.
+
+===== 004117 =====
+Proof flowchart illustrating the relationships and dependencies among propositions and lemmas leading to the Overcomplete Learning Bound (Theorem 3).
+
+===== 004119 =====
+Proof flowchart illustrating the dependencies of lemmas leading to the Sparse Coding Stability Theorem.
+
+===== 004232 =====
+Flowchart illustrating the GCD computation pipeline for 2D blur kernel estimation, showing sequential stages from input polynomials through kernel degree estimation, 2D kernel estimation, to GCD computation.
+
+===== 004259 =====
+Flowchart of the text denoising and connected concept extraction method illustrating sequential application of fog index, threshold, association matrix, and PPV/sensitivity steps on biomedical text leading to ranked and re-ranked connected concepts.
+
+===== 004313 =====
+Architecture diagram showing the retrieval and visualization modules with labeled subsystems and their data flow.
+
+===== 004330 =====
+Architecture of an end-to-end probabilistic web data cleaning system showing the flow from a dirty database through data generative and error model learning, candidate finding, evaluation, and selection, resulting in a clean database.
+
+===== 004528 =====
+Aranea architecture diagram showing the three main modules: Question Analysis, Document and Passage Retrieval, and Answer Extraction with sequential processing steps connected by arrows.

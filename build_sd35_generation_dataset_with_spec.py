@@ -2,6 +2,7 @@ import base64
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from openai import OpenAI
 
@@ -26,9 +27,15 @@ PROMPT_DIR = "prompts"
 OUTPUT_PATH = "data/output/sd35_generation_dataset_with_spec.jsonl"
 
 
-# 복잡도 분류 기준
+# =========================
+# Classification settings
+# =========================
+
+# OCR label 수 기준 복잡도 분류
+# exclude_image: OCR label 8개 이상이면 complex
+# include_image: OCR label 7개 이상이면 complex
 COMPLEX_OCR_THRESHOLD_EXCLUDE = 8
-COMPLEX_OCR_THRESHOLD_INCLUDE = 6
+COMPLEX_OCR_THRESHOLD_INCLUDE = 7
 
 # SD3.5 Medium 전용 프롬프트 파일 매핑
 PROMPT_BY_GENERATION_TYPE = {
@@ -37,6 +44,12 @@ PROMPT_BY_GENERATION_TYPE = {
     "include_simple": "caption_prompt_sd35_include_simple",
     "include_complex": "caption_prompt_sd35_include_complex",
 }
+
+# SD3.5용 positive prompt 길이 제한.
+# 실제 tokenizer마다 tokenization이 다를 수 있어, 여기서는 단어/구두점 단위의 보수적 근사값으로 제한한다.
+MAX_SD35_PROMPT_TOKENS = 250
+MAX_SD35_PROMPT_SENTENCES = 6
+MAX_SD35_PROMPT_CHARS = 1200
 
 
 # =========================
@@ -83,6 +96,40 @@ def load_prompt(prompt_version: str) -> str:
 
 
 # =========================
+# Metadata helpers
+# =========================
+
+def get_ocr_count(record: dict) -> int:
+    """
+    image_ocr 안의 비어 있지 않은 OCR label 개수를 센다.
+    simple/complex 분류는 depth가 아니라 이 OCR 개수를 기준으로 한다.
+    """
+    image_ocr = record.get("image_ocr", [])
+
+    if not isinstance(image_ocr, list):
+        return 0
+
+    return len([x for x in image_ocr if str(x).strip()])
+
+
+def get_complexity_from_ocr(record: dict) -> str:
+    """
+    OCR label 수 기준으로 simple/complex를 결정한다.
+    include-image figure는 embedded panel이 많아서 threshold를 별도로 둔다.
+    """
+    flowchart_type = record.get("_flowchart_type", "")
+    ocr_count = get_ocr_count(record)
+
+    if flowchart_type == "exclude_image":
+        return "complex" if ocr_count >= COMPLEX_OCR_THRESHOLD_EXCLUDE else "simple"
+
+    if flowchart_type == "include_image":
+        return "complex" if ocr_count >= COMPLEX_OCR_THRESHOLD_INCLUDE else "simple"
+
+    return "simple"
+
+
+# =========================
 # Image resolver
 # =========================
 
@@ -124,25 +171,20 @@ def resolve_image_path_and_type(record: dict) -> tuple[str, str]:
 
 
 def classify_generation_type(record: dict) -> str:
+    """
+    flowchart_type + OCR count 기반으로 generation_type을 결정한다.
+    depth 관련 정보는 사용하지 않는다.
+    """
     flowchart_type = record["_flowchart_type"]
-    image_ocr = record.get("image_ocr", [])
-
-    if not isinstance(image_ocr, list):
-        image_ocr = []
-
-    ocr_count = len([x for x in image_ocr if str(x).strip()])
+    complexity = get_complexity_from_ocr(record)
 
     if flowchart_type == "exclude_image":
-        if ocr_count >= COMPLEX_OCR_THRESHOLD_EXCLUDE:
-            return "exclude_complex"
-        return "exclude_simple"
+        return f"exclude_{complexity}"
 
     if flowchart_type == "include_image":
-        if ocr_count >= COMPLEX_OCR_THRESHOLD_INCLUDE:
-            return "include_complex"
-        return "include_simple"
+        return f"include_{complexity}"
 
-    return "exclude_simple"
+    return f"exclude_{complexity}"
 
 
 def filter_existing_image_records(records: list[dict]) -> list[dict]:
@@ -163,6 +205,8 @@ def filter_existing_image_records(records: list[dict]) -> list[dict]:
             copied = dict(record)
             copied["_resolved_image_path"] = image_path
             copied["_flowchart_type"] = flowchart_type
+            copied["_ocr_count"] = get_ocr_count(copied)
+            copied["_complexity"] = get_complexity_from_ocr(copied)
             copied["_generation_type"] = classify_generation_type(copied)
             valid_records.append(copied)
 
@@ -191,33 +235,19 @@ def filter_existing_image_records(records: list[dict]) -> list[dict]:
     return valid_records
 
 
-#def select_records_for_generation(valid_records: list[dict]) -> list[dict]:
-    selected = []
+def get_image_sort_key(record: dict) -> str:
+    """
+    파일명이 000001.png처럼 zero padding 되어 있으면 문자열 정렬만으로 충분하다.
+    """
+    return extract_filename_from_record(record) or ""
 
-    for generation_type, limit in SAMPLES_PER_TYPE.items():
-        subset = [
-            record for record in valid_records
-            if record.get("_generation_type") == generation_type
-        ]
 
-        selected_subset = subset[:limit]
-        selected.extend(selected_subset)
-
-        print(
-            f"[Select] {generation_type}: "
-            f"requested={limit}, available={len(subset)}, selected={len(selected_subset)}"
-        )
-
-    return selected
 def select_records_for_generation(valid_records: list[dict]) -> list[dict]:
     """
     참고 폴더에 실제로 존재하고, metadata에서 caption이 확인된 모든 이미지를 선택한다.
     유형별 개수 제한은 적용하지 않는다.
     """
-    selected = sorted(
-        valid_records,
-        key=lambda record: str(record.get("image_filename") or record.get("_resolved_image_path") or "")
-    )
+    selected = sorted(valid_records, key=get_image_sort_key)
 
     generation_counts = {}
 
@@ -230,6 +260,7 @@ def select_records_for_generation(valid_records: list[dict]) -> list[dict]:
     print(f"Selected records by generation type: {generation_counts}")
 
     return selected
+
 
 def encode_image_to_base64(image_path: str) -> str:
     path = Path(image_path)
@@ -256,7 +287,7 @@ def encode_image_to_base64(image_path: str) -> str:
 # Response parsing / cleaning
 # =========================
 
-def clean_text(value: str) -> str:
+def clean_text(value: Any) -> str:
     return str(value).strip()
 
 
@@ -264,7 +295,16 @@ def compress_whitespace(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def limit_sentence_count(text: str, max_sentences: int = 6) -> str:
+def ensure_sentence(text: str) -> str:
+    text = clean_text(text)
+    if not text:
+        return ""
+    if text[-1] not in ".!?":
+        text += "."
+    return text
+
+
+def limit_sentence_count(text: str, max_sentences: int = MAX_SD35_PROMPT_SENTENCES) -> str:
     parts = re.split(r"(?<=[.!?])\s+", text.strip())
     parts = [p.strip() for p in parts if p.strip()]
     if len(parts) <= max_sentences:
@@ -272,7 +312,290 @@ def limit_sentence_count(text: str, max_sentences: int = 6) -> str:
     return " ".join(parts[:max_sentences])
 
 
-def parse_json_response(text: str) -> dict:
+def count_prompt_tokens_approx(text: str) -> int:
+    # SD tokenizer와 완전히 같지는 않지만, 단어와 구두점 단위로 보수적 근사값을 계산한다.
+    return len(re.findall(r"\w+|[^\w\s]", text, flags=re.UNICODE))
+
+
+def limit_prompt_tokens_approx(text: str, max_tokens: int = MAX_SD35_PROMPT_TOKENS) -> str:
+    tokens = re.findall(r"\w+|[^\w\s]", text, flags=re.UNICODE)
+    if len(tokens) <= max_tokens:
+        return text
+
+    kept_tokens = tokens[:max_tokens]
+    truncated = " ".join(kept_tokens)
+    truncated = re.sub(r"\s+([,.;:!?])", r"\1", truncated)
+    truncated = compress_whitespace(truncated)
+
+    # 가능하면 마지막 완성 문장까지만 사용한다.
+    last_period = max(truncated.rfind("."), truncated.rfind("!"), truncated.rfind("?"))
+    if last_period >= 80:
+        truncated = truncated[: last_period + 1]
+    elif truncated and truncated[-1] not in ".!?":
+        truncated += "."
+
+    return truncated
+
+
+def remove_section_labels(prompt: str) -> str:
+    """
+    SD3.5가 Style:, Text:, Layout: 같은 섹션명을 이미지 안에 그리는 위험을 줄인다.
+    """
+    section_label_patterns = [
+        r"\bStyle\s*:\s*",
+        r"\bText\s*:\s*",
+        r"\bLabels\s*:\s*",
+        r"\bLayout\s*:\s*",
+        r"\bLayout and arrows\s*:\s*",
+        r"\bPosition and arrows\s*:\s*",
+        r"\bArrows\s*:\s*",
+        r"\bVisible text\s*:\s*",
+    ]
+
+    for pattern in section_label_patterns:
+        prompt = re.sub(pattern, "", prompt, flags=re.IGNORECASE)
+
+    return prompt
+
+
+def rewrite_negative_to_positive(prompt: str) -> str:
+    """
+    LLM이 실수로 출력한 부정형 제약 문장을 positive prompt 표현으로 바꾼다.
+    최종 image_generation_prompt에는 가능한 한 allowed-element wording만 남긴다.
+    """
+    rewrites = {
+        r"Do not add a global title or external caption\.?":
+            "The canvas starts directly with the figure content and contains only the visible figure area.",
+        r"Do not add a new global title or external caption\.?":
+            "The canvas starts directly with the figure content and contains only the visible figure area.",
+        r"No global title or external caption\.?":
+            "The canvas starts directly with the figure content and contains only the visible figure area.",
+        r"Do not add any global title, external caption, legend, bullet list, or explanatory paragraph outside the (figure|diagram)\.?":
+            "The canvas contains only the visible figure area with clean empty surrounding whitespace.",
+        r"Do not add any title, heading, caption, legend, bullet list, explanatory paragraph, or extra text outside the (figure|diagram)\.?":
+            "The canvas contains only the visible diagram area with clean empty surrounding whitespace.",
+        r"Do not invent extra explanatory text\.?":
+            "Visible text consists of original labels and annotations from the figure.",
+        r"Do not invent explanatory text outside the figure\.?":
+            "Visible text consists of original labels and annotations from the figure.",
+        r"Do not invent additional explanatory text\.?":
+            "Visible text consists of original labels and annotations from the figure.",
+        r"Do not write the (figure|diagram) type itself as visible text\.?":
+            "Visible text consists of original labels and annotations from the figure.",
+        r"Do not include any explanatory text outside the (figure|diagram)\.?":
+            "The surrounding whitespace remains clean and empty.",
+        r"The display_caption must not be placed inside the generated image\.?":
+            "The generated image contains only the figure content.",
+        r"Preserve only labels that belong to visible nodes, arrows, boxes, or annotations\.?":
+            "Visible text consists of original node labels, arrow labels, box labels, and annotations.",
+        r"Preserve only labels that belong to visible nodes, panels, containers, arrows, or annotations\.?":
+            "Visible text consists of original node labels, panel labels, container labels, arrow labels, and annotations.",
+        r"Do not replace important visual panels with empty generic boxes\.?":
+            "Important embedded visual panels appear as content-bearing visual panels with simplified internal visual content.",
+        r"Do not replace important embedded visual panels with empty boxes\.?":
+            "Important embedded visual panels appear as content-bearing visual panels with simplified internal visual content.",
+        r"If the original (figure|diagram) has no (global )?title, do not create a new title\.?":
+            "The canvas starts directly with the figure content.",
+        r"without a figure-number prefix":
+            "using plain academic caption text",
+    }
+
+    for pattern, replacement in rewrites.items():
+        prompt = re.sub(pattern, replacement, prompt, flags=re.IGNORECASE)
+
+    return prompt
+
+
+def normalize_sd35_prompt(prompt: str) -> str:
+    prompt = clean_text(prompt)
+
+    prefixes = [
+        "Image generation prompt:",
+        "Prompt:",
+        "Generated prompt:",
+        "Stable Diffusion 3.5 Medium prompt:",
+        "SD3.5 prompt:",
+    ]
+    for prefix in prefixes:
+        if prompt.lower().startswith(prefix.lower()):
+            prompt = prompt[len(prefix):].strip()
+
+    section_headers = [
+        "Hard constraints:",
+        "Overall layout:",
+        "Overall figure type and layout:",
+        "Overall architecture layout:",
+        "Overall multi-panel layout:",
+        "Left or upper region:",
+        "Right or lower region:",
+        "Center communication or connection region:",
+        "Center connection or communication region:",
+        "Left panel:",
+        "Right panel:",
+        "Center region:",
+        "Style constraints:",
+        "Style:",
+        "Text:",
+        "Layout:",
+        "Layout and arrows:",
+        "Position and arrows:",
+        "Arrows:",
+        "Nodes and positions:",
+        "Connections:",
+        "Visual regions and embedded panels:",
+        "Visual panels and their roles:",
+        "Processing blocks and arrows:",
+        "Major regions and containers:",
+        "Main containers and grouped regions:",
+        "Important nodes and module layout:",
+        "Major connections and arrow styles:",
+        "Visible labels and clean academic style:",
+        "Embedded visual panels, visible labels, and clean academic style:",
+    ]
+    for header in section_headers:
+        prompt = prompt.replace(header, "")
+
+    prompt = remove_section_labels(prompt)
+    prompt = rewrite_negative_to_positive(prompt)
+    prompt = compress_whitespace(prompt)
+
+    if not re.search(r"\bwhite background\b", prompt, flags=re.IGNORECASE):
+        prompt = "Clean academic scientific figure on a white background. " + prompt
+
+    if not re.search(r"\bvisible text consists\b", prompt, flags=re.IGNORECASE):
+        prompt = (
+            prompt.rstrip(". ")
+            + ". Visible text consists of original node labels, panel labels, arrow labels, container labels, and annotations."
+        )
+
+    if not re.search(r"\bclean empty surrounding whitespace\b", prompt, flags=re.IGNORECASE):
+        prompt = (
+            prompt.rstrip(". ")
+            + ". Clean empty surrounding whitespace around the figure content."
+        )
+
+    prompt = compress_whitespace(prompt)
+    prompt = limit_sentence_count(prompt, max_sentences=MAX_SD35_PROMPT_SENTENCES)
+
+    if len(prompt) > MAX_SD35_PROMPT_CHARS:
+        prompt = prompt[:MAX_SD35_PROMPT_CHARS].rsplit(".", 1)[0] + "."
+
+    prompt = limit_prompt_tokens_approx(prompt, max_tokens=MAX_SD35_PROMPT_TOKENS)
+    return prompt
+
+
+def build_sd35_prompt_from_generation_sections(diagram_spec: dict) -> str:
+    """
+    diagram_spec.generation_sections를 SD3.5용 자연어 prompt로 변환한다.
+    최종 prompt에는 Style:, Text:, Layout: 같은 섹션명을 넣지 않는다.
+    """
+    sections = diagram_spec.get("generation_sections", {})
+
+    if not isinstance(sections, dict):
+        return ""
+
+    style = clean_text(sections.get("style", ""))
+    text = clean_text(sections.get("text", ""))
+    layout_and_arrows = clean_text(sections.get("layout_and_arrows", ""))
+
+    sentences = []
+
+    if style:
+        sentences.append(ensure_sentence(style))
+
+    if text:
+        sentences.append(ensure_sentence(text))
+
+    if layout_and_arrows:
+        sentences.append(ensure_sentence(layout_and_arrows))
+
+    prompt = " ".join(sentences)
+    return normalize_sd35_prompt(prompt)
+
+
+def clean_image_generation_prompt(prompt: str) -> str:
+    """
+    fallback용 SD3.5 prompt 정리 함수.
+    generation_sections가 없는 경우에만 모델이 반환한 image_generation_prompt를 직접 정리한다.
+    """
+    return normalize_sd35_prompt(prompt)
+
+
+def clean_display_caption(caption: str) -> str:
+    caption = clean_text(caption)
+
+    prefixes = [
+        "Figure:",
+        "Figure 1:",
+        "Figure 1.",
+        "Fig.:",
+        "Fig. 1:",
+        "Caption:",
+        "Display caption:",
+    ]
+
+    for prefix in prefixes:
+        if caption.lower().startswith(prefix.lower()):
+            caption = caption[len(prefix):].strip()
+
+    return caption
+
+
+def validate_and_fill_diagram_spec(diagram_spec: dict, record: dict) -> dict:
+    """
+    새 spec 구조에서 누락될 수 있는 필드를 최소한의 기본값으로 보강한다.
+    OCR 기준 분류를 사용하므로 depth 필드는 spec에 넣지 않는다.
+    """
+    flowchart_type = record.get("_flowchart_type", "")
+    generation_type = record.get("_generation_type", "")
+    complexity = record.get("_complexity") or get_complexity_from_ocr(record)
+
+    diagram_spec.setdefault("figure_type", "scientific figure")
+    diagram_spec["flowchart_type"] = diagram_spec.get("flowchart_type") or flowchart_type
+    diagram_spec["generation_type"] = diagram_spec.get("generation_type") or generation_type
+    diagram_spec["complexity"] = diagram_spec.get("complexity") or complexity
+
+    # LLM이 실수로 depth를 반환해도 최종 spec에서는 제거한다.
+    diagram_spec.pop("depth", None)
+
+    diagram_spec.setdefault("canvas", {})
+    if isinstance(diagram_spec["canvas"], dict):
+        diagram_spec["canvas"].setdefault("orientation", diagram_spec.get("orientation", "unknown"))
+        diagram_spec["canvas"].setdefault("layout_summary", "")
+        diagram_spec["canvas"].setdefault("background", "white")
+
+    diagram_spec.setdefault("style", {})
+    if isinstance(diagram_spec["style"], dict):
+        diagram_spec["style"].setdefault("overall_style", "clean academic scientific figure")
+        diagram_spec["style"].setdefault("color_mode", "black-and-white or minimal color")
+        diagram_spec["style"].setdefault("line_style", "thin clean lines")
+        diagram_spec["style"].setdefault("font_style", "small readable academic labels")
+        diagram_spec["style"].setdefault("geometry_style", "simple aligned geometry")
+
+    diagram_spec.setdefault("text_elements", [])
+    diagram_spec.setdefault("layout_elements", [])
+    diagram_spec.setdefault("arrows", [])
+    diagram_spec.setdefault("embedded_visual_elements", [])
+    diagram_spec.setdefault("generation_sections", {})
+
+    if isinstance(diagram_spec["generation_sections"], dict):
+        diagram_spec["generation_sections"].setdefault(
+            "style",
+            "Clean academic scientific figure on a white background with readable labels and aligned geometry.",
+        )
+        diagram_spec["generation_sections"].setdefault(
+            "text",
+            "Visible text consists of original node labels, panel labels, arrow labels, container labels, and annotations.",
+        )
+        diagram_spec["generation_sections"].setdefault(
+            "layout_and_arrows",
+            "The layout follows the original relative positions with clear arrows between connected elements.",
+        )
+
+    return diagram_spec
+
+
+def parse_json_response(text: str, record: dict | None = None) -> dict:
     text = text.strip()
 
     if text.startswith("```"):
@@ -301,9 +624,26 @@ def parse_json_response(text: str) -> dict:
     if not isinstance(data["diagram_spec"], dict):
         raise ValueError("diagram_spec must be a JSON object.")
 
-    data["image_generation_prompt"] = clean_image_generation_prompt(
-        data["image_generation_prompt"]
-    )
+    if record is not None:
+        data["diagram_spec"] = validate_and_fill_diagram_spec(
+            data["diagram_spec"],
+            record=record,
+        )
+
+    generation_sections = data["diagram_spec"].get("generation_sections", {})
+
+    if isinstance(generation_sections, dict) and any(
+        clean_text(generation_sections.get(key, ""))
+        for key in ["style", "text", "layout_and_arrows"]
+    ):
+        data["image_generation_prompt"] = build_sd35_prompt_from_generation_sections(
+            data["diagram_spec"]
+        )
+    else:
+        data["image_generation_prompt"] = clean_image_generation_prompt(
+            data["image_generation_prompt"]
+        )
+
     data["display_caption"] = clean_display_caption(
         data["display_caption"]
     )
@@ -311,108 +651,39 @@ def parse_json_response(text: str) -> dict:
     return data
 
 
-def clean_image_generation_prompt(prompt: str) -> str:
+def build_negative_prompt(generation_type: str) -> str:
     """
-    SD3.5 Medium 전용 prompt 정리 함수.
-
-    목표:
-    - Qwen 스타일의 긴 구조형 prompt를 더 짧고 압축된 형태로 정리
-    - 부정 지시를 줄이고, 핵심 구조/레이아웃/라벨/화살표 정보만 남기기
-    - 3~6문장 정도의 자연어 prompt로 유지
+    SD3.5 실행 환경에서 negative_prompt를 별도 입력으로 지원할 때 사용한다.
+    이 문자열은 image_generation_prompt 뒤에 이어 붙이지 않는다.
     """
-    prompt = clean_text(prompt)
-
-    # 앞머리 제거
-    prefixes = [
-        "Image generation prompt:",
-        "Prompt:",
-        "Generated prompt:",
-        "Stable Diffusion 3.5 Medium prompt:",
-        "SD3.5 prompt:",
-    ]
-    for prefix in prefixes:
-        if prompt.lower().startswith(prefix.lower()):
-            prompt = prompt[len(prefix):].strip()
-
-    # Qwen 스타일 섹션 헤더 제거
-    section_headers = [
-        "Hard constraints:",
-        "Overall layout:",
-        "Left or upper region:",
-        "Right or lower region:",
-        "Center communication or connection region:",
-        "Left panel:",
-        "Right panel:",
-        "Center region:",
-        "Style constraints:",
-        "Style:",
-        "Nodes and positions:",
-        "Connections:",
-        "Visual regions and embedded panels:",
-        "Processing blocks and arrows:",
-        "Major regions and containers:",
-        "Main containers and grouped regions:",
-        "Important nodes and module layout:",
-        "Major connections and arrow styles:",
-        "Visual panels and their roles:",
-        "Overall figure type and layout:",
+    terms = [
+        "global title",
+        "external caption",
+        "legend",
+        "paragraph",
+        "bullet list",
+        "watermark",
+        "signature",
+        "decorative background",
+        "extra unrelated text",
+        "random labels",
+        "distorted typography",
     ]
 
-    for header in section_headers:
-        prompt = prompt.replace(header, "")
+    if generation_type.startswith("exclude"):
+        terms.extend([
+            "photorealistic scene",
+            "decorative illustration",
+            "background texture",
+        ])
 
-    # 과한 부정 지시 정리
-    long_negative_patterns = [
-        r"Do not add any global title, external caption, legend, bullet list, or explanatory paragraph outside the (figure|diagram)\.?",
-        r"Do not add any title, heading, caption, legend, bullet list, explanatory paragraph, or extra text outside the (figure|diagram)\.?",
-        r"Do not write the (figure|diagram) type itself as visible text\.?",
-        r"Do not invent extra explanatory text\.?",
-        r"Do not include any explanatory text outside the (figure|diagram)\.?",
-        r"The display_caption must not be placed inside the generated image\.?",
-        r"Preserve only labels that belong to visible nodes, panels, containers, arrows, or annotations\.?",
-    ]
-    for pattern in long_negative_patterns:
-        prompt = re.sub(pattern, "", prompt, flags=re.IGNORECASE)
+    if generation_type.startswith("include"):
+        terms.extend([
+            "empty placeholder panel",
+            "blank embedded image box",
+        ])
 
-    # 중복 문장 정리
-    prompt = compress_whitespace(prompt)
-
-    # 문장 보강
-    if not re.search(r"\bwhite background\b", prompt, flags=re.IGNORECASE):
-        prompt = "A clean academic figure on a white background. " + prompt
-
-    if not re.search(r"\bNo global title or external caption\b", prompt, flags=re.IGNORECASE):
-        prompt = prompt.rstrip(". ") + ". No global title or external caption."
-
-    prompt = compress_whitespace(prompt)
-    prompt = limit_sentence_count(prompt, max_sentences=6)
-
-    # 길이 제한
-    max_chars = 900
-    if len(prompt) > max_chars:
-        prompt = prompt[:max_chars].rsplit(".", 1)[0] + "."
-
-    return prompt
-
-
-def clean_display_caption(caption: str) -> str:
-    caption = clean_text(caption)
-
-    prefixes = [
-        "Figure:",
-        "Figure 1:",
-        "Figure 1.",
-        "Fig.:",
-        "Fig. 1:",
-        "Caption:",
-        "Display caption:",
-    ]
-
-    for prefix in prefixes:
-        if caption.lower().startswith(prefix.lower()):
-            caption = caption[len(prefix):].strip()
-
-    return caption
+    return ", ".join(terms)
 
 
 # =========================
@@ -423,6 +694,8 @@ def generate_sd35_bundle(record: dict, prompt_text: str) -> dict:
     image_path = record["_resolved_image_path"]
     flowchart_type = record["_flowchart_type"]
     generation_type = record["_generation_type"]
+    ocr_count = record.get("_ocr_count", get_ocr_count(record))
+    complexity = record.get("_complexity", get_complexity_from_ocr(record))
 
     image_data_url = encode_image_to_base64(image_path)
 
@@ -439,21 +712,22 @@ You are given an existing scientific image-caption pair.
 Your task is to create THREE outputs for Stable Diffusion 3.5 Medium:
 
 1. diagram_spec
-A structured JSON object that describes the figure layout.
+A structured JSON object that describes the figure layout using the required schema below.
+Use generation_type={generation_type} and complexity={complexity}.
+The caller already selected simple or complex using OCR label count.
+Use positive descriptions in all style and generation fields.
 
 2. image_generation_prompt
-A prompt that will be given directly to Stable Diffusion 3.5 Medium.
-This prompt must be shorter and more compact than a Qwen-style prompt.
-Use concise structured natural language.
-Prefer about 3 to 6 sentences.
-Focus on the main layout, important nodes or panels, major arrows, and readable labels.
-Avoid long negative instruction lists.
-Use at most one short negative sentence such as:
-"No global title or external caption."
+A compact positive prompt for Stable Diffusion 3.5 Medium.
+Keep it under {MAX_SD35_PROMPT_TOKENS} tokens.
+Use 3 to 6 concise natural-language sentences.
+The prompt should combine generation_sections.style, generation_sections.text, and generation_sections.layout_and_arrows as plain natural language.
+Use no section labels such as "Style:", "Text:", "Layout:", or "Arrows:" in image_generation_prompt.
+Focus on visible style, readable original labels, relative positions, panels, nodes, and arrows.
 
 3. display_caption
-A concise academic caption that will be shown below the generated image.
-It must not be drawn inside the image.
+A concise academic caption shown below the generated image as separate metadata.
+Use plain caption text.
 
 Paper metadata:
 - arXiv ID: {arxiv_id}
@@ -461,6 +735,8 @@ Paper metadata:
 - Categories: {categories}
 - Flowchart type: {flowchart_type}
 - Generation type: {generation_type}
+- Complexity: {complexity}
+- OCR label count: {ocr_count}
 - Original paper caption: {original_caption}
 - OCR words detected in image: {image_ocr}
 - Matched keywords: {matched_keywords}
@@ -472,16 +748,67 @@ Output rule:
 Return valid JSON only, with exactly these keys:
 {{
   "diagram_spec": {{
-    "figure_type": "...",
-    "orientation": "...",
-    "major_regions": [],
-    "containers": [],
-    "nodes": [],
-    "embedded_visual_elements": [],
-    "connections": [],
-    "style_constraints": []
+    "figure_type": "flowchart | architecture | pipeline | multi_panel_figure | scientific_figure",
+    "flowchart_type": "{flowchart_type}",
+    "generation_type": "{generation_type}",
+    "complexity": "{complexity}",
+    "canvas": {{
+      "orientation": "horizontal | vertical | square | grid | compact | mixed",
+      "layout_summary": "...",
+      "background": "white"
+    }},
+    "style": {{
+      "overall_style": "...",
+      "color_mode": "...",
+      "line_style": "...",
+      "font_style": "...",
+      "geometry_style": "..."
+    }},
+    "text_elements": [
+      {{
+        "text": "...",
+        "role": "node_label | arrow_label | panel_label | container_label | annotation | resource_label",
+        "position": "...",
+        "attached_to": "..."
+      }}
+    ],
+    "layout_elements": [
+      {{
+        "id": "...",
+        "type": "node | container | panel | embedded_visual | resource | annotation",
+        "label": "...",
+        "shape": "rectangle | rounded_rectangle | circle | oval | cylinder | panel | text",
+        "position": "...",
+        "size": "small | medium | large",
+        "contains": []
+      }}
+    ],
+    "arrows": [
+      {{
+        "source": "...",
+        "target": "...",
+        "direction": "left_to_right | right_to_left | top_to_bottom | bottom_to_top | bidirectional | diagonal",
+        "line_style": "solid | dashed | dotted | curved",
+        "label": "",
+        "route": "straight | curved | around_container | crossing"
+      }}
+    ],
+    "embedded_visual_elements": [
+      {{
+        "id": "...",
+        "content_type": "plot | waveform | screenshot | illustration | anatomical_figure | result_panel | none",
+        "position": "...",
+        "role": "...",
+        "visual_detail": "..."
+      }}
+    ],
+    "generation_sections": {{
+      "style": "One concise sentence describing academic style, background, color mode, lines, fonts, and geometry.",
+      "text": "One concise sentence describing the original visible labels to render.",
+      "layout_and_arrows": "One to three concise sentences describing relative positions, grouping, panels, node order, and arrows."
+    }}
   }},
-  "image_generation_prompt": "...",
+  "image_generation_prompt": "A plain natural-language SD3.5 prompt under {MAX_SD35_PROMPT_TOKENS} tokens, with no section labels.",
   "display_caption": "..."
 }}
 """
@@ -494,7 +821,9 @@ Return valid JSON only, with exactly these keys:
                 "content": (
                     "You create structured diagram specifications, Stable Diffusion 3.5 Medium generation prompts, "
                     "and separate display captions for scientific figures. "
-                    "Return only valid JSON. Do not output markdown, commentary, or analysis."
+                    "Return only valid JSON. Do not output markdown, commentary, or analysis. "
+                    "For image_generation_prompt, use compact positive visual wording under 250 tokens. "
+                    "Do not include section labels in image_generation_prompt."
                 ),
             },
             {
@@ -513,17 +842,19 @@ Return valid JSON only, with exactly these keys:
         ],
     )
 
-    return parse_json_response(response.output_text)
+    return parse_json_response(response.output_text, record=record)
 
 
 def make_output_record(
     record: dict,
     generated: dict,
-    prompt_version: str
+    prompt_version: str,
 ) -> dict:
     image_path = record["_resolved_image_path"]
     flowchart_type = record["_flowchart_type"]
     generation_type = record["_generation_type"]
+    ocr_count = record.get("_ocr_count", get_ocr_count(record))
+    complexity = record.get("_complexity", get_complexity_from_ocr(record))
     filename = extract_filename_from_record(record)
     image_id = Path(filename).stem if filename else str(record.get("idx"))
 
@@ -533,25 +864,22 @@ def make_output_record(
         "arxiv_id": record.get("arxiv_id"),
         "title": record.get("title"),
         "categories": record.get("categories"),
-
         "image_filename": filename,
         "image_path": image_path,
         "flowchart_type": flowchart_type,
         "generation_type": generation_type,
-
+        "ocr_count": ocr_count,
+        "complexity": complexity,
         "original_caption": record.get("caption", ""),
-
         "diagram_spec": generated["diagram_spec"],
-
-        # SD3.5 Medium에 직접 넣을 프롬프트
         "image_generation_prompt": generated["image_generation_prompt"],
-
-        # 생성된 이미지 아래에 따로 보여줄 캡션
+        "image_generation_prompt_token_count_approx": count_prompt_tokens_approx(
+            generated["image_generation_prompt"]
+        ),
+        "negative_prompt": build_negative_prompt(generation_type),
         "display_caption": generated["display_caption"],
-
         "image_ocr": record.get("image_ocr", []),
         "matched_keywords": record.get("matched_keywords", []),
-
         "prompt_version": prompt_version,
         "target_model": "sd3.5-medium",
     }
@@ -581,7 +909,7 @@ def main():
     for generation_type, prompt_version in PROMPT_BY_GENERATION_TYPE.items():
         prompt_cache[generation_type] = {
             "prompt_version": prompt_version,
-            "prompt_text": load_prompt(prompt_version)
+            "prompt_text": load_prompt(prompt_version),
         }
         print(f"{generation_type}: {prompt_version}")
 
@@ -603,6 +931,8 @@ def main():
             f"idx={record.get('idx')}, arxiv_id={record.get('arxiv_id')}"
         )
         print(f"Flowchart type: {record['_flowchart_type']}")
+        print(f"OCR count: {record.get('_ocr_count')}")
+        print(f"Complexity: {record.get('_complexity')}")
         print(f"Generation type: {generation_type}")
         print(f"Prompt version: {prompt_version}")
         print(f"Original caption: {record.get('caption', '')}")
@@ -610,19 +940,24 @@ def main():
         try:
             generated = generate_sd35_bundle(
                 record=record,
-                prompt_text=prompt_text
+                prompt_text=prompt_text,
             )
 
             output_record = make_output_record(
                 record=record,
                 generated=generated,
-                prompt_version=prompt_version
+                prompt_version=prompt_version,
             )
 
             save_jsonl(output_record, OUTPUT_PATH)
 
             print(f"Display caption: {generated['display_caption']}")
             print(f"Image generation prompt: {generated['image_generation_prompt'][:500]}...")
+            print(
+                "Approx prompt tokens: "
+                f"{output_record['image_generation_prompt_token_count_approx']}"
+            )
+            print(f"Negative prompt: {output_record['negative_prompt']}")
 
         except Exception as e:
             print(f"[Error] idx={record.get('idx')}")
